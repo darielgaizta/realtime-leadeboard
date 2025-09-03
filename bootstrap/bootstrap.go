@@ -1,23 +1,26 @@
 package bootstrap
 
 import (
-	"fmt"
 	"log"
-	"os"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/darielgaizta/realtime-leaderboard/internal/app"
+	"github.com/darielgaizta/realtime-leaderboard/internal/config"
 )
 
-func NewApplication() *fiber.App {
-	app := fiber.New()
-	return app
+func init() {
+	config.LoadEnv()
 }
 
-func Start(app *fiber.App) {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "5000"
+func SetupApplication() *app.App {
+	configuration, err := config.NewConfiguration()
+	if err != nil {
+		log.Fatalf("Failed to setup configuration: %v", err)
 	}
 
-	log.Fatal(app.Listen(fmt.Sprintf(":%s", port)))
+	application, err := app.NewApplication(configuration)
+	if err != nil {
+		log.Fatalf("Failed to setup application: %v", err)
+	}
+
+	return application
 }

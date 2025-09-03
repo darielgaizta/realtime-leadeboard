@@ -5,4 +5,5 @@ sql:
     engine: "postgresql"
     gen:
       go:
-        out: "internal/db/app"
+        package: "db"
+        out: "internal/db/generated"
