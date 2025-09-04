@@ -5,6 +5,7 @@ import (
 
 	"github.com/darielgaizta/realtime-leaderboard/internal/app"
 	"github.com/darielgaizta/realtime-leaderboard/internal/config"
+	"github.com/darielgaizta/realtime-leaderboard/internal/router"
 )
 
 func init() {
@@ -21,6 +22,9 @@ func SetupApplication() *app.App {
 	if err != nil {
 		log.Fatalf("Failed to setup application: %v", err)
 	}
+
+	r := router.NewRouter(application)
+	r.Install(application.Server)
 
 	return application
 }
