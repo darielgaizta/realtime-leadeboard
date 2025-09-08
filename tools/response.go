@@ -2,8 +2,20 @@ package tools
 
 import "github.com/gofiber/fiber/v2"
 
-func RespondWith400(c *fiber.Ctx, err error) error {
-	return c.Status(400).JSON(fiber.Map{
-		"message": err.Error(),
+func RespondWith400(c *fiber.Ctx, message string) error {
+	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		"message": message,
+	})
+}
+
+func RespondWith401(c *fiber.Ctx, message string) error {
+	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+		"message": message,
+	})
+}
+
+func RespondWith500(c *fiber.Ctx, message string) error {
+	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		"message": message,
 	})
 }
