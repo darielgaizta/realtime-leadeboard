@@ -2,6 +2,7 @@ package tools
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"time"
 
@@ -23,8 +24,22 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
-func (h *JWT) GeneratAccessToken(userID int32, username, email string) (string, error) {
-	tokenID, err := generateTokenID()
+type IssuedToken struct {
+	RefreshToken string `json:"refresh_token"`
+	AccessToken  string `json:"access_token"`
+}
+
+func NewJWT(issuer, secret string, accessExpire, refreshExpire int64) *JWT {
+	return &JWT{
+		Issuer:        issuer,
+		Secret:        secret,
+		AccessExpire:  accessExpire,
+		RefreshExpire: refreshExpire,
+	}
+}
+
+func (h *JWT) generateAccessToken(userID int32, username, email string) (string, error) {
+	tokenID, err := h.generateTokenID()
 	if err != nil {
 		return "", nil
 	}
@@ -45,11 +60,11 @@ func (h *JWT) GeneratAccessToken(userID int32, username, email string) (string, 
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(h.Secret)
+	return token.SignedString([]byte(h.Secret))
 }
 
-func (h *JWT) GenerateRefreshToken() (string, error) {
-	tokenID, err := generateTokenID()
+func (h *JWT) generateRefreshToken() (string, error) {
+	tokenID, err := h.generateTokenID()
 	if err != nil {
 		return "", nil
 	}
@@ -64,12 +79,38 @@ func (h *JWT) GenerateRefreshToken() (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(h.Secret)
+	return token.SignedString([]byte(h.Secret))
+}
+
+func (h *JWT) generateTokenID() (string, error) {
+	bytes := make([]byte, 16)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(bytes), nil
+}
+
+func (h *JWT) IssueToken(userID int32, username, email string) (*IssuedToken, error) {
+	accessToken, err := h.generateAccessToken(userID, username, email)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := h.generateRefreshToken()
+	if err != nil {
+		return nil, err
+	}
+
+	return &IssuedToken{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }
 
 func (h *JWT) ValidateToken(tokenString string) (*JWTClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (any, error) {
-		return h.Secret, nil
+		return []byte(h.Secret), nil
 	})
 
 	if err != nil {
@@ -83,11 +124,7 @@ func (h *JWT) ValidateToken(tokenString string) (*JWTClaims, error) {
 	return nil, fiber.ErrUnauthorized
 }
 
-func generateTokenID() (string, error) {
-	bytes := make([]byte, 16)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(bytes), nil
+func (h *JWT) HashToken(tokenString string) string {
+	hash := sha256.Sum256([]byte(tokenString))
+	return hex.EncodeToString(hash[:])
 }

@@ -22,13 +22,13 @@ func NewUserHandler(app *app.App) *UserHandler {
 func (h *UserHandler) Register(c *fiber.Ctx) error {
 	var request dto.UserRequest
 	if err := c.BodyParser(&request); err != nil {
-		tools.RespondWith400(c, "Invalid request body")
+		return tools.RespondWith400(c, "Invalid request body")
 	}
 
 	// Hash password
 	hashedPassword, err := tools.HashPassword(request.Password)
 	if err != nil {
-		tools.RespondWith400(c, err.Error())
+		return tools.RespondWith400(c, err.Error())
 	}
 
 	// Generate random username
@@ -41,7 +41,7 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 		Email:    request.Email,
 	})
 	if err != nil {
-		tools.RespondWith400(c, err.Error())
+		return tools.RespondWith400(c, err.Error())
 	}
 
 	return c.Status(201).JSON(dto.UserResponse{

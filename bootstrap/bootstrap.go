@@ -6,6 +6,7 @@ import (
 	"github.com/darielgaizta/realtime-leaderboard/internal/app"
 	"github.com/darielgaizta/realtime-leaderboard/internal/config"
 	"github.com/darielgaizta/realtime-leaderboard/internal/router"
+	"github.com/darielgaizta/realtime-leaderboard/tools"
 )
 
 func init() {
@@ -23,7 +24,14 @@ func SetupApplication() *app.App {
 		log.Fatalf("Failed to setup application: %v", err)
 	}
 
-	r := router.NewRouter(application)
+	jwt := tools.NewJWT(
+		configuration.Name,
+		configuration.JWTSecret,
+		configuration.JWTAccessExpire,
+		configuration.JWTRefreshExpire,
+	)
+
+	r := router.NewRouter(application, jwt)
 	r.Install(application.Server)
 
 	return application
