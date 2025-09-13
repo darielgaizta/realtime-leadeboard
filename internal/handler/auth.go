@@ -2,6 +2,7 @@ package handler
 
 import (
 	"database/sql"
+	"log"
 
 	"github.com/darielgaizta/realtime-leaderboard/internal/app"
 	db "github.com/darielgaizta/realtime-leaderboard/internal/db/generated"
@@ -60,6 +61,9 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return tools.RespondWith500(c, "Failed to store refresh token")
 	}
 
+	// Set a new refresh token in cookie.
+	tools.SetRefreshTokenCookie(c, issuedToken.RefreshToken)
+
 	return c.Status(201).JSON(dto.TokenResponse{
 		AccessToken:  issuedToken.AccessToken,
 		RefreshToken: issuedToken.RefreshToken,
@@ -69,22 +73,25 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 }
 
 func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
-	var request dto.RefreshTokenRequest
-	if err := c.BodyParser(&request); err != nil {
-		return tools.RespondWith400(c, "Invalid request body")
+	refreshTokenFromCookie := tools.GetRefreshTokenFromCookie(c)
+	if refreshTokenFromCookie == "" {
+		return tools.RespondWith401(c, "Refresh token not found")
 	}
 
 	// Validate refresh token and parse JWT claims.
-	claims, err := h.JWT.ValidateToken(request.RefreshToken)
+	claims, err := h.JWT.ValidateToken(refreshTokenFromCookie)
 	if err != nil || claims.Subject != "refresh-token" {
 		return tools.RespondWith400(c, "Invalid refresh token")
 	}
+
+	// Get user data.
 	user, err := h.App.DB.GetUserByTokenID(c.Context(), claims.ID)
 	if err != nil {
+		tools.ClearRefreshTokenCookie(c) // CLear refresh token from cookie it contains invalid token.
 		return tools.RespondWith401(c, "Refresh token not found or has expired")
 	}
 
-	// "Refresh Token Rotation"
+	// "Refresh Token Rotation": Revoke refresh token to issue a new one.
 	if err = h.App.DB.RevokeRefreshTokenByTokenID(c.Context(), claims.ID); err != nil {
 		return tools.RespondWith500(c, "Failed to revoke refresh token")
 	}
@@ -112,10 +119,42 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 		return tools.RespondWith500(c, "Failed to store refresh token")
 	}
 
+	// Set a new refresh token in cookie.
+	tools.SetRefreshTokenCookie(c, issuedToken.RefreshToken)
+
 	return c.Status(201).JSON(dto.TokenResponse{
 		AccessToken:  issuedToken.AccessToken,
 		RefreshToken: issuedToken.RefreshToken,
 		ExpiresIn:    h.JWT.AccessExpire,
 		TokenType:    "Bearer",
+	})
+}
+
+func (h *AuthHandler) Logout(c *fiber.Ctx) error {
+	refreshTokenFromCookie := tools.GetRefreshTokenFromCookie(c)
+
+	if refreshTokenFromCookie != "" {
+		// Validate refresh token and parse JWT claims.
+		claims, err := h.JWT.ValidateToken(refreshTokenFromCookie)
+		if err != nil || claims.Subject != "refresh-token" {
+			log.Println("Invalid refresh token is used for logout")
+		} else {
+			// Get user data.
+			user, err := h.App.DB.GetUserByTokenID(c.Context(), claims.ID)
+			if err != nil {
+				log.Println("Refresh token does not exist in database")
+			} else {
+				// Revoke all refresh token by user.
+				if err := h.App.DB.RevokeRefreshTokensByUser(c.Context(), user.ID); err != nil {
+					log.Printf("Failed to revoke refresh token for user %s", err.Error())
+				}
+			}
+		}
+	}
+
+	tools.ClearRefreshTokenCookie(c)
+
+	return c.Status(200).JSON(fiber.Map{
+		"message": "Successfully logged out",
 	})
 }
