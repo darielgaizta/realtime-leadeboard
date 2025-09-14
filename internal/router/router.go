@@ -29,8 +29,12 @@ func (router *Router) Install(app *fiber.App, m *middleware.Middleware) {
 	api.Use(m.CORSProtection())
 	api.Use(m.CSRFProtection())
 
+	// API Version 1.0
 	v1 := api.Group("/v1")
 	RegisterAuthRoutes(v1, router.AuthHandler)
 	RegisterCSRFRoutes(v1, router.CSRFHandler)
-	RegisterUserRoutes(v1, router.UserHandler)
+
+	// Routes that required authentication.
+	protected := v1.Group("").Use(m.AuthRequired())
+	RegisterUserRoutes(protected, router.UserHandler)
 }
