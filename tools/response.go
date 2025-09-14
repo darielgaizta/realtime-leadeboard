@@ -14,6 +14,12 @@ func RespondWith401(c *fiber.Ctx, message string) error {
 	})
 }
 
+func RespondWith403(c *fiber.Ctx, message string) error {
+	return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+		"message": message,
+	})
+}
+
 func RespondWith500(c *fiber.Ctx, message string) error {
 	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 		"message": message,

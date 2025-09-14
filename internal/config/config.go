@@ -14,6 +14,7 @@ type Config struct {
 	JWTSecret        string `env:"JWT_SECRET"`
 	JWTAccessExpire  int64  `env:"JWT_ACCESS_EXPIRE"`
 	JWTRefreshExpire int64  `env:"JWT_REFRESH_EXPIRE"`
+	CSRFCookieSecure bool   `env:"CSRF_COOKIE_SECURE"`
 }
 
 func NewConfiguration() (*Config, error) {

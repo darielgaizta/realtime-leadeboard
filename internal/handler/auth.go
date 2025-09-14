@@ -3,12 +3,14 @@ package handler
 import (
 	"database/sql"
 	"log"
+	"time"
 
 	"github.com/darielgaizta/realtime-leaderboard/internal/app"
 	db "github.com/darielgaizta/realtime-leaderboard/internal/db/generated"
 	"github.com/darielgaizta/realtime-leaderboard/internal/dto"
 	"github.com/darielgaizta/realtime-leaderboard/tools"
 	"github.com/gofiber/fiber/v2"
+	"github.com/goombaio/namegenerator"
 )
 
 type AuthHandler struct {
@@ -21,6 +23,37 @@ func NewAuthHandler(app *app.App, jwt *tools.JWT) *AuthHandler {
 		App: app,
 		JWT: jwt,
 	}
+}
+
+func (h *AuthHandler) Register(c *fiber.Ctx) error {
+	var request dto.UserRequest
+	if err := c.BodyParser(&request); err != nil {
+		return tools.RespondWith400(c, "Invalid request body")
+	}
+
+	// Hash password
+	hashedPassword, err := tools.HashPassword(request.Password)
+	if err != nil {
+		return tools.RespondWith500(c, "Failed to hash password")
+	}
+
+	// Generate random username
+	seed := time.Now().UTC().UnixNano()
+	name := namegenerator.NewNameGenerator(seed).Generate()
+
+	user, err := h.App.DB.CreateUser(c.Context(), db.CreateUserParams{
+		Username: name,
+		Password: hashedPassword,
+		Email:    request.Email,
+	})
+	if err != nil {
+		return tools.RespondWith400(c, "Email or password is not available")
+	}
+
+	return c.Status(201).JSON(dto.UserResponse{
+		Email:    user.Email,
+		Username: user.Username,
+	})
 }
 
 func (h *AuthHandler) Login(c *fiber.Ctx) error {

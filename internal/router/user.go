@@ -6,6 +6,4 @@ import (
 )
 
 func RegisterUserRoutes(router fiber.Router, handler *handler.UserHandler) {
-	r := router.Group("/user")
-	r.Post("/register", handler.Register)
 }
