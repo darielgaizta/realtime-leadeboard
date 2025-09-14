@@ -1,13 +1,13 @@
 package middleware
 
-import "github.com/darielgaizta/realtime-leaderboard/internal/app"
+import "github.com/darielgaizta/realtime-leaderboard/internal/config"
 
 type Middleware struct {
-	App *app.App
+	Config *config.Config
 }
 
-func NewMiddleware(app *app.App) *Middleware {
+func NewMiddleware(config *config.Config) *Middleware {
 	return &Middleware{
-		App: app,
+		Config: config,
 	}
 }

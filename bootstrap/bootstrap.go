@@ -5,6 +5,7 @@ import (
 
 	"github.com/darielgaizta/realtime-leaderboard/internal/app"
 	"github.com/darielgaizta/realtime-leaderboard/internal/config"
+	"github.com/darielgaizta/realtime-leaderboard/internal/middleware"
 	"github.com/darielgaizta/realtime-leaderboard/internal/router"
 	"github.com/darielgaizta/realtime-leaderboard/tools"
 )
@@ -32,7 +33,8 @@ func SetupApplication() *app.App {
 	)
 
 	r := router.NewRouter(application, jwt)
-	r.Install(application.Server)
+	m := middleware.NewMiddleware(configuration)
+	r.Install(application.Server, m)
 
 	return application
 }
