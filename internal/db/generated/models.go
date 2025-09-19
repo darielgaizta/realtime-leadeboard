@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+type Game struct {
+	ID        int32
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type RefreshToken struct {
 	ID         int32
 	TokenID    string
@@ -27,6 +34,15 @@ type User struct {
 	Username  string
 	Password  string
 	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type UserScore struct {
+	ID        int32
+	UserID    int32
+	GameID    int32
+	Value     int32
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
