@@ -47,7 +47,7 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		Email:    request.Email,
 	})
 	if err != nil {
-		return tools.RespondWith400(c, "Email or password is not available")
+		return tools.RespondWith400(c, "Email is already taken or invalid")
 	}
 
 	return c.Status(201).JSON(dto.UserResponse{
