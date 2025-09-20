@@ -10,15 +10,15 @@ import (
 
 type Router struct {
 	CSRFHandler *handler.CSRFHandler
-	UserHandler *handler.UserHandler
 	AuthHandler *handler.AuthHandler
+	GameHandler *handler.GameHandler
 }
 
 func NewRouter(app *app.App, jwt *tools.JWT) *Router {
 	return &Router{
 		CSRFHandler: handler.NewCSRFHandler(app),
-		UserHandler: handler.NewUserHandler(app),
 		AuthHandler: handler.NewAuthHandler(app, jwt),
+		GameHandler: handler.NewGameHandler(app),
 	}
 }
 
@@ -36,5 +36,5 @@ func (router *Router) Install(app *fiber.App, m *middleware.Middleware) {
 
 	// Routes that required authentication.
 	protected := v1.Group("").Use(m.AuthRequired())
-	RegisterUserRoutes(protected, router.UserHandler)
+	RegisterGameRoutes(protected, router.GameHandler)
 }

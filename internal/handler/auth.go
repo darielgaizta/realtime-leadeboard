@@ -97,7 +97,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	// Set a new refresh token in cookie.
 	tools.SetRefreshTokenCookie(c, issuedToken.RefreshToken)
 
-	return c.Status(201).JSON(dto.TokenResponse{
+	return c.Status(200).JSON(dto.TokenResponse{
 		AccessToken:  issuedToken.AccessToken,
 		RefreshToken: issuedToken.RefreshToken,
 		ExpiresIn:    h.JWT.AccessExpire,
@@ -155,7 +155,7 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	// Set a new refresh token in cookie.
 	tools.SetRefreshTokenCookie(c, issuedToken.RefreshToken)
 
-	return c.Status(201).JSON(dto.TokenResponse{
+	return c.Status(200).JSON(dto.TokenResponse{
 		AccessToken:  issuedToken.AccessToken,
 		RefreshToken: issuedToken.RefreshToken,
 		ExpiresIn:    h.JWT.AccessExpire,
