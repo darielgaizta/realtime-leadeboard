@@ -5,3 +5,6 @@ RETURNING *;
 
 -- name: GetGames :many
 SELECT * FROM games;
+
+-- name: GetGameByID :one
+SELECT * FROM games WHERE id = $1;
